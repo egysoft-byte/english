@@ -25,7 +25,9 @@ import {
   ArrowLeft,
   Maximize2,
   Info,
-  Lock
+  Lock,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import Canvas, { CanvasHandle } from './components/Canvas';
 import GameMap, { Stage } from './components/GameMap';
@@ -62,12 +64,14 @@ const GrammarRuleItem = ({ rule, explanation }: { rule: string; explanation: str
           {isExpanded ? 'Hide Details' : 'Show Rules'}
         </button>
       </div>
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {isExpanded && (
           <motion.div 
+            key="explanation-content"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
             className="overflow-hidden"
           >
             <p className="text-xs text-slate-600 mt-2 pt-2 border-t border-slate-200 leading-relaxed">
@@ -96,15 +100,14 @@ export default function App() {
   const [selfConfidence, setSelfConfidence] = useState(3);
   const [showSelfAssessment, setShowSelfAssessment] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [isRequirementsExpanded, setIsRequirementsExpanded] = useState(true);
+
   
   // Paper lines customization
   const [showLines, setShowLines] = useState(true);
   const [lineDensity, setLineDensity] = useState(2.5);
   
   const [stages, setStages] = useState<Stage[]>(() => {
-    const saved = localStorage.getItem('writewise_stages');
-    if (saved) return JSON.parse(saved);
-    
     const generateTopics = (skillTitle: string) => {
       return Array.from({ length: 10 }, (_, i) => ({
         id: i + 1,
@@ -113,7 +116,7 @@ export default function App() {
       }));
     };
 
-    return [
+    const defaultStages: Stage[] = [
       // Beginner
       { 
         id: 1, title: 'Sentence Structure', level: 'beginner', isCompleted: false, isLocked: false,
@@ -135,49 +138,109 @@ export default function App() {
         skillRequirements: 'Use present and past tenses correctly in academic descriptions.',
         topics: generateTopics('Verb Tenses')
       },
+      { 
+        id: 5, title: 'Pronoun Reference', level: 'beginner', isCompleted: false, isLocked: true,
+        skillRequirements: 'Ensure pronouns clearly refer back to their intended nouns without ambiguity.',
+        topics: generateTopics('Pronoun Reference')
+      },
+      { 
+        id: 6, title: 'Articles & Determiners', level: 'beginner', isCompleted: false, isLocked: true,
+        skillRequirements: 'Correctly use a, an, the, and zero article in academic contexts.',
+        topics: generateTopics('Articles & Determiners')
+      },
+      { 
+        id: 7, title: 'Prepositions', level: 'beginner', isCompleted: false, isLocked: true,
+        skillRequirements: 'Master prepositions of time, place, and logical relationships.',
+        topics: generateTopics('Prepositions')
+      },
       // Intermediate
       { 
-        id: 5, title: 'Paragraph Cohesion', level: 'intermediate', isCompleted: false, isLocked: true,
+        id: 8, title: 'Paragraph Cohesion', level: 'intermediate', isCompleted: false, isLocked: true,
         skillRequirements: 'Connect sentences logically using transition words.',
         topics: generateTopics('Paragraph Cohesion')
       },
       { 
-        id: 6, title: 'Academic Vocabulary', level: 'intermediate', isCompleted: false, isLocked: true,
+        id: 9, title: 'Academic Vocabulary', level: 'intermediate', isCompleted: false, isLocked: true,
         skillRequirements: 'Use formal language and avoid colloquialisms.',
         topics: generateTopics('Academic Vocabulary')
       },
       { 
-        id: 7, title: 'Active vs Passive', level: 'intermediate', isCompleted: false, isLocked: true,
+        id: 10, title: 'Active vs Passive', level: 'intermediate', isCompleted: false, isLocked: true,
         skillRequirements: 'Choose between active and passive voice for clarity and objectivity.',
         topics: generateTopics('Active vs Passive')
       },
       { 
-        id: 8, title: 'Summarizing Skills', level: 'intermediate', isCompleted: false, isLocked: true,
+        id: 11, title: 'Summarizing Skills', level: 'intermediate', isCompleted: false, isLocked: true,
         skillRequirements: 'Condense complex information into concise summaries.',
         topics: generateTopics('Summarizing Skills')
       },
+      { 
+        id: 12, title: 'Complex Sentences', level: 'intermediate', isCompleted: false, isLocked: true,
+        skillRequirements: 'Combine ideas using subordinating conjunctions and relative clauses.',
+        topics: generateTopics('Complex Sentences')
+      },
+      { 
+        id: 13, title: 'Paraphrasing', level: 'intermediate', isCompleted: false, isLocked: true,
+        skillRequirements: 'Rewrite source material in your own words while maintaining the original meaning.',
+        topics: generateTopics('Paraphrasing')
+      },
+      { 
+        id: 14, title: 'Signposting', level: 'intermediate', isCompleted: false, isLocked: true,
+        skillRequirements: 'Guide the reader through your text using clear structural markers.',
+        topics: generateTopics('Signposting')
+      },
       // Advanced
       { 
-        id: 9, title: 'Critical Argumentation', level: 'advanced', isCompleted: false, isLocked: true,
+        id: 15, title: 'Critical Argumentation', level: 'advanced', isCompleted: false, isLocked: true,
         skillRequirements: 'Develop strong thesis statements and support them with evidence.',
         topics: generateTopics('Critical Argumentation')
       },
       { 
-        id: 10, title: 'Synthesis of Sources', level: 'advanced', isCompleted: false, isLocked: true,
+        id: 16, title: 'Synthesis of Sources', level: 'advanced', isCompleted: false, isLocked: true,
         skillRequirements: 'Integrate multiple viewpoints and cite sources correctly.',
         topics: generateTopics('Synthesis of Sources')
       },
       { 
-        id: 11, title: 'Nuance & Hedging', level: 'advanced', isCompleted: false, isLocked: true,
+        id: 17, title: 'Nuance & Hedging', level: 'advanced', isCompleted: false, isLocked: true,
         skillRequirements: 'Use cautious language (may, might, suggests) to express uncertainty.',
         topics: generateTopics('Nuance & Hedging')
       },
       { 
-        id: 12, title: 'Abstract Writing', level: 'advanced', isCompleted: false, isLocked: true,
+        id: 18, title: 'Abstract Writing', level: 'advanced', isCompleted: false, isLocked: true,
         skillRequirements: 'Write concise and effective abstracts for research papers.',
         topics: generateTopics('Abstract Writing')
       },
+      { 
+        id: 19, title: 'Literature Review', level: 'advanced', isCompleted: false, isLocked: true,
+        skillRequirements: 'Compare, contrast, and evaluate multiple academic studies cohesively.',
+        topics: generateTopics('Literature Review')
+      },
+      { 
+        id: 20, title: 'Counter-arguments', level: 'advanced', isCompleted: false, isLocked: true,
+        skillRequirements: 'Anticipate and effectively address opposing viewpoints in your writing.',
+        topics: generateTopics('Counter-arguments')
+      },
+      { 
+        id: 21, title: 'Grant Proposals', level: 'advanced', isCompleted: false, isLocked: true,
+        skillRequirements: 'Adopt a persuasive, authoritative tone to justify research funding.',
+        topics: generateTopics('Grant Proposals')
+      },
     ];
+
+    const saved = localStorage.getItem('writewise_stages');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Check if it has the new structure (topics array)
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].topics) {
+          return parsed;
+        }
+      } catch (e) {
+        console.error("Failed to parse saved stages", e);
+      }
+    }
+    
+    return defaultStages;
   });
 
   const [currentStage, setCurrentStage] = useState<Stage | null>(null);
@@ -443,22 +506,22 @@ export default function App() {
               className="space-y-8"
             >
               {/* Topic Switcher */}
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between gap-4 overflow-x-auto">
-                <div className="flex items-center gap-2">
+              <div className="bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-2 overflow-hidden w-full">
                   <button 
                     onClick={() => setView('map')}
-                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
+                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500 shrink-0"
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
-                  <div className="h-8 w-px bg-slate-100 mx-2" />
-                  <div className="flex items-center gap-2">
+                  <div className="h-8 w-px bg-slate-100 mx-1 sm:mx-2 shrink-0" />
+                  <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar py-2 px-1 flex-1">
                     {currentStage?.topics.map((t, i) => (
                       <button
                         key={t.id}
                         onClick={() => handleTopicChange(i)}
                         className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-all border-2",
+                          "w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded-lg sm:rounded-xl flex items-center justify-center font-bold transition-all border-2 text-xs sm:text-sm",
                           currentTopicIndex === i 
                             ? "bg-blue-500 border-blue-600 text-white shadow-md scale-110" 
                             : t.isCompleted
@@ -466,12 +529,12 @@ export default function App() {
                               : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
                         )}
                       >
-                        {t.isCompleted ? <CheckCircle2 className="w-5 h-5" /> : i + 1}
+                        {t.isCompleted ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : i + 1}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
+                <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 shrink-0">
                   <Trophy className="w-4 h-4 text-amber-500" />
                   <span className="text-xs font-black text-slate-600 uppercase tracking-widest">
                     {currentStage?.topics.filter(t => t.isCompleted).length} / 10 Topics
@@ -506,14 +569,36 @@ export default function App() {
                       </div>
                     </div>
                     
-                    <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                      <div className="flex items-center gap-2 text-blue-700 mb-1">
-                        <Star className="w-3 h-3 fill-current" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Skill Requirements</span>
-                      </div>
-                      <p className="text-xs text-blue-800 font-medium leading-relaxed">
-                        {currentStage?.skillRequirements}
-                      </p>
+                    <div className="mb-4 bg-blue-50 rounded-xl border border-blue-100 overflow-hidden">
+                      <button 
+                        onClick={() => setIsRequirementsExpanded(!isRequirementsExpanded)}
+                        className="w-full p-3 flex items-center justify-between text-left hover:bg-blue-100/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 text-blue-700">
+                          <Star className="w-3 h-3 fill-current" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Skill Requirements</span>
+                        </div>
+                        {isRequirementsExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-blue-500" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-blue-500" />
+                        )}
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isRequirementsExpanded && (
+                          <motion.div
+                            key="requirements-content"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                          >
+                            <p className="px-3 pb-3 text-xs text-blue-800 font-medium leading-relaxed border-t border-blue-100/50 pt-2">
+                              {currentStage?.skillRequirements}
+                            </p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     <h2 className="text-xl font-semibold text-slate-800 leading-tight">
@@ -523,14 +608,14 @@ export default function App() {
 
                   <div className="space-y-4">
                     {/* Toolbar */}
-                    <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-xl shadow-sm border border-slate-200">
-                      <div className="flex items-center gap-1.5 pr-4 border-r border-slate-100">
+                    <div className="flex items-center gap-3 sm:gap-4 bg-white p-2 sm:p-3 rounded-xl shadow-sm border border-slate-200 overflow-x-auto hide-scrollbar">
+                      <div className="flex items-center gap-1.5 pr-3 sm:pr-4 border-r border-slate-100 shrink-0">
                         {COLORS.map((c) => (
                           <button
                             key={c.value}
                             onClick={() => { setPenColor(c.value); setIsEraser(false); }}
                             className={cn(
-                              "w-6 h-6 rounded-full transition-all hover:scale-110",
+                              "w-6 h-6 sm:w-7 sm:h-7 rounded-full transition-all hover:scale-110",
                               penColor === c.value && !isEraser ? "ring-2 ring-offset-2 ring-slate-800 scale-110" : "opacity-80"
                             )}
                             style={{ backgroundColor: c.value }}
@@ -538,7 +623,7 @@ export default function App() {
                         ))}
                       </div>
 
-                      <div className="flex items-center gap-2 pr-4 border-r border-slate-100">
+                      <div className="flex items-center gap-1.5 sm:gap-2 pr-3 sm:pr-4 border-r border-slate-100 shrink-0">
                         {PEN_SIZES.map((size) => (
                           <button
                             key={size}
@@ -554,36 +639,38 @@ export default function App() {
                         ))}
                       </div>
 
-                      <div className="flex items-center gap-2 pr-4 border-r border-slate-100">
+                      <div className="flex items-center gap-2 pr-3 sm:pr-4 border-r border-slate-100 shrink-0">
                         <button
                           onClick={() => setIsEraser(!isEraser)}
                           className={cn(
-                            "p-2 rounded-lg transition-all",
-                            isEraser ? "bg-slate-100 text-slate-800" : "text-slate-400 hover:bg-slate-50"
+                            "p-2 rounded-lg transition-all flex items-center gap-2 font-bold text-sm",
+                            isEraser ? "bg-red-50 text-red-600 border border-red-200" : "text-slate-400 hover:bg-slate-50 border border-transparent"
                           )}
+                          title="Eraser Tool"
                         >
                           <Eraser className="w-5 h-5" />
+                          <span className="hidden sm:inline">{isEraser ? "Eraser Active" : "Eraser"}</span>
                         </button>
                       </div>
 
                       {/* Paper Lines Controls */}
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                         <button
                           onClick={() => setShowLines(!showLines)}
                           className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border",
+                            "flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all border",
                             showLines ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-slate-200 text-slate-400"
                           )}
                         >
                           <Palette className="w-3 h-3" />
-                          Lines
+                          <span className="hidden sm:inline">Lines</span>
                         </button>
                         {showLines && (
-                          <div className="flex items-center gap-2 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                          <div className="flex items-center gap-1 sm:gap-2 bg-slate-50 px-1.5 sm:px-2 py-1 rounded-lg border border-slate-100">
                             <button onClick={() => setLineDensity(Math.max(1, lineDensity - 0.5))} className="p-1 hover:bg-slate-200 rounded text-slate-500">
                               <Minus className="w-3 h-3" />
                             </button>
-                            <span className="text-[10px] font-black text-slate-600 w-6 text-center">{lineDensity}</span>
+                            <span className="text-[10px] font-black text-slate-600 w-5 sm:w-6 text-center">{lineDensity}</span>
                             <button onClick={() => setLineDensity(Math.min(5, lineDensity + 0.5))} className="p-1 hover:bg-slate-200 rounded text-slate-500">
                               <Plus className="w-3 h-3" />
                             </button>
@@ -603,23 +690,24 @@ export default function App() {
                         lineDensity={lineDensity}
                       />
                     
-                    <div className="absolute bottom-4 right-4 flex gap-2 z-20">
+                    <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 flex gap-2 z-20">
                       <button
                         onClick={handleClear}
-                        className="p-3 bg-white/90 backdrop-blur shadow-lg rounded-full text-slate-600 hover:text-red-500 transition-all active:scale-95"
+                        className="p-2 sm:p-3 bg-white/90 backdrop-blur shadow-lg rounded-full text-slate-600 hover:text-red-500 transition-all active:scale-95"
                       >
-                        <RotateCcw className="w-5 h-5" />
+                        <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                       <button
                         onClick={handleSubmitClick}
                         disabled={isEvaluating}
                         className={cn(
-                          "flex items-center gap-2 px-6 py-3 bg-slate-800 text-white font-bold rounded-full shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
+                          "flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-slate-800 text-white font-bold rounded-full shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base",
                           !isEvaluating && "hover:bg-slate-900"
                         )}
                       >
-                        {isEvaluating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                        {isEvaluating ? "Evaluating..." : "Submit Task"}
+                        {isEvaluating ? <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> : <Send className="w-4 h-4 sm:w-5 sm:h-5" />}
+                        <span className="hidden sm:inline">{isEvaluating ? "Evaluating..." : "Submit Task"}</span>
+                        <span className="sm:hidden">{isEvaluating ? "..." : "Submit"}</span>
                       </button>
                     </div>
                   </div>
@@ -799,7 +887,7 @@ export default function App() {
       </AnimatePresence>
       {/* Footer */}
       <footer className="max-w-4xl mx-auto px-4 py-12 text-center text-slate-400 text-xs">
-        <p>© 2026 WriteWise AI Tutor. Powered by Gemini.</p>
+        <p>develop by Dr.Amr Habib 2026</p>
       </footer>
     </div>
   );
